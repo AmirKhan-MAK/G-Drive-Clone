@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # Route 1: File Service Route
+        - id: file-service-route
+          uri: lb://FILE-SERVICE  # 'lb://' means Load Balanced Eureka Service Name
+          predicates:
+            - Path=/api/files/**
+
+        # Route 2: Folder Service Route
+        - id: folder-service-route
+          uri: lb://FOLDER-SERVICE
+          predicates:
+            - Path=/api/folders/**
+
+        # Route 3: Auth Service Route
+        - id: auth-service-route
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+
+      # Global CORS Configuration for React Frontend
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
