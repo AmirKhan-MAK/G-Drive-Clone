@@ -116,12 +116,11 @@ backend/auth-service/src/main/java/com/drive/auth/
 │
 ├── repository/
 │   ├── UserRepository.java              # JPA Repo for `users` table
-│   ├── RoleRepository.java              # JPA Repo for `roles` table
 │   └── RefreshTokenRepository.java      # JPA Repo for `refresh_tokens` table
 │
 ├── entity/
 │   ├── User.java                        # User JPA Entity
-│   ├── Role.java                        # Role JPA Entity
+│   ├── Role.java                        # Role Enum (ROLE_USER, ROLE_ADMIN)
 │   └── RefreshToken.java                # Refresh Token JPA Entity
 │
 ├── dto/

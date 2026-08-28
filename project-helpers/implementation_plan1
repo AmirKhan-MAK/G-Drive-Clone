@@ -1,0 +1,125 @@
+# Complete Auth Service Implementation Plan
+
+This implementation plan details the technical steps to complete the **Auth Service** microservice (`AUTH-SERVICE`) in `Backend/AUTH-SERVICE` for the **DriveClone** application, adhering strictly to the 16 project specification documents (`api-contracts.md`, `database-schema.md`, `monorepo-structure.md`, `MVPTechDoc(2).md`, etc.).
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **Database Auto-DDL vs MySQL DDL Script:** By default, Spring Data JPA `hibernate.ddl-auto: update` is enabled in `application.yml`. On startup, JPA will automatically create `users`, `roles`, `user_roles`, and `refresh_tokens` tables in MySQL (`auth_db`). Additionally, an automated `DataInitializer` bean will seed initial roles (`ROLE_USER`, `ROLE_ADMIN`) into the database if they are absent.
+> - **Jakarta Validation Dependency:** We will ensure `spring-boot-starter-validation` is present in `pom.xml` for request validation (`@Valid`, `@NotBlank`, `@Email`).
+> - **Error & Response Uniformity:** All API endpoints (`/api/auth/*`) will return the standard envelope structure:
+>   `{ "success": boolean, "message": String, "data": Object }`.
+
+---
+
+## Proposed Changes
+
+### AUTH-SERVICE Component (`Backend/AUTH-SERVICE`)
+
+#### [MODIFY] [pom.xml](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/pom.xml)
+- Add `spring-boot-starter-validation` dependency.
+- Add `lombok` dependency (optional helper, plus fallback standard constructors/getters).
+- Ensure `jjwt-api`, `jjwt-impl`, `jjwt-jackson` (v0.11.5) are configured.
+
+#### [MODIFY] [application.yml](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/resources/application.yml)
+- Configure MySQL `auth_db` datasource credentials (`jdbc:mysql://localhost:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true`).
+- Set JWT properties: `jwt.secret` and `jwt.expiration-ms` (86400000 = 24h) and `jwt.refresh-expiration-ms` (604800000 = 7 days).
+- Configure Eureka client service URL (`http://localhost:8761/eureka/`).
+
+#### [NEW] [ApiResponse.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/response/ApiResponse.java)
+- Standard generic response envelope containing `success` (boolean), `message` (String), and `data` (T).
+
+#### [MODIFY] [JwtResponse.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/response/JwtResponse.java)
+- Payload returned on successful login and refresh: `accessToken`, `refreshToken`, `tokenType` ("Bearer"), `expiresIn` (Long), `user` details (`id`, `name`, `email`, `role`/`roles`).
+
+#### [MODIFY] [UserProfileResponse.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/response/UserProfileResponse.java)
+- User profile DTO returned by `GET /api/auth/me`: `id`, `name`, `email`, `roles`, `createdAt`.
+
+#### [MODIFY] [RegisterRequest.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/request/RegisterRequest.java)
+- Request payload DTO for `POST /api/auth/register` with validation (`@NotBlank`, `@Email`, `@Size`). Fields: `name`, `email`, `password`, `confirmPassword`.
+
+#### [MODIFY] [LoginRequest.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/request/LoginRequest.java)
+- Request payload DTO for `POST /api/auth/login` with validation (`@NotBlank`, `@Email`). Fields: `email`, `password`.
+
+#### [MODIFY] [RefreshTokenRequest.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/dto/request/RefreshTokenRequest.java)
+- Request payload DTO for `POST /api/auth/refresh`. Field: `refreshToken`.
+
+#### [MODIFY] [User.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/entity/User.java)
+- JPA Entity mapped to `users` table: `id` (BIGINT), `name`, `email` (UNIQUE), `password` (hashed), `roles` (`Set<Role>` via `user_roles`), `createdAt`, `updatedAt`.
+
+#### [MODIFY] [Role.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/entity/Role.java)
+- JPA Entity mapped to `roles` table: `id` (BIGINT), `name` (VARCHAR UNIQUE, e.g. `ROLE_USER`, `ROLE_ADMIN`).
+
+#### [MODIFY] [RefreshToken.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/entity/RefreshToken.java)
+- JPA Entity mapped to `refresh_tokens` table: `id` (BIGINT), `user` (`@OneToOne`/`@ManyToOne`), `token` (VARCHAR UNIQUE), `expiryDate` (Instant), `createdAt` (Instant).
+
+#### [MODIFY] [UserRepository.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/repository/UserRepository.java)
+- Spring Data JPA Repository interface: `Optional<User> findByEmail(String email)`, `Boolean existsByEmail(String email)`.
+
+#### [MODIFY] [RoleRepository.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/repository/RoleRepository.java)
+- Spring Data JPA Repository interface: `Optional<Role> findByName(String name)`.
+
+#### [MODIFY] [RefreshTokenRepository.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/repository/RefreshTokenRepository.java)
+- Spring Data JPA Repository interface: `Optional<RefreshToken> findByToken(String token)`, `int deleteByUser(User user)`, `void deleteByToken(String token)`.
+
+#### [NEW] [CustomExceptions & GlobalExceptionHandler](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/exception/GlobalExceptionHandler.java)
+- Define `UserAlreadyExistsException`, `TokenRefreshException`, `BadRequestException`, `ResourceNotFoundException`.
+- Build `@RestControllerAdvice` `GlobalExceptionHandler` to format all exceptions into unified `ApiResponse` error envelopes with appropriate HTTP statuses (400, 401, 404, 409, 500).
+
+#### [MODIFY] [JwtService.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/service/JwtService.java)
+- Utility service for building, signing, parsing, and validating JWT tokens using HMAC-SHA256 and JJWT library. Exposes helper methods: `generateToken(email, claims)`, `extractEmail(token)`, `validateToken(token, userDetails)`.
+
+#### [MODIFY] [AuthService.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/service/AuthService.java) & [AuthServiceImpl.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/service/impl/AuthServiceImpl.java)
+- Interface and implementation defining authentication business logic:
+  - `register(RegisterRequest)`: validates password match, checks email uniqueness, encodes password with BCrypt, attaches `ROLE_USER`, saves user to DB, returns user metadata.
+  - `login(LoginRequest)`: authenticates user via Spring Security `AuthenticationManager`, generates JWT access token and database-stored refresh token, returns `JwtResponse`.
+  - `refreshToken(RefreshTokenRequest)`: validates refresh token presence and expiration in DB, issues new JWT access token and updated refresh token.
+  - `logout(String userEmail / String token)`: revokes and deletes refresh token from DB.
+  - `getProfile(String email)`: fetches current user details and returns `UserProfileResponse`.
+
+#### [MODIFY] [UserDetailsServiceImpl.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/security/UserDetailsServiceImpl.java)
+- Spring Security `UserDetailsService` implementation: loads `User` entity by email, converts user roles into `GrantedAuthority` objects, returns standard `org.springframework.security.core.userdetails.User`.
+
+#### [MODIFY] [JwtAuthenticationFilter.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/security/JwtAuthenticationFilter.java)
+- Extends `OncePerRequestFilter`. Intercepts incoming HTTP requests, parses `Authorization: Bearer <token>`, validates JWT token, and sets security context (`SecurityContextHolder`).
+
+#### [MODIFY] [SecurityConfig.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/security/SecurityConfig.java)
+- Configures Spring Security 6 / Spring Boot 3+ `SecurityFilterChain`:
+  - Disables CSRF (stateless API).
+  - Configures stateless session creation policy (`SessionCreationPolicy.STATELESS`).
+  - Permits public endpoints: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`.
+  - Protects remaining endpoints: `POST /api/auth/logout`, `GET /api/auth/me`.
+  - Registers `JwtAuthenticationFilter` before `UsernamePasswordAuthenticationToken.class`.
+  - Exposes `AuthenticationManager` and `PasswordEncoder` (`BCryptPasswordEncoder`) beans.
+
+#### [NEW] [DataInitializer.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/config/DataInitializer.java)
+- Implements `CommandLineRunner`. Automatically seeds `ROLE_USER` and `ROLE_ADMIN` roles in `roles` table upon startup if they do not exist.
+
+#### [MODIFY] [AuthController.java](file:///d:/projects/G-Drive-Clone/Backend/AUTH-SERVICE/src/main/java/com/clone/drive/controller/AuthController.java)
+- REST Controller exposed at `/api/auth`:
+  - `@PostMapping("/register")`: `registerUser(@Valid @RequestBody RegisterRequest request)` -> 201 Created
+  - `@PostMapping("/login")`: `loginUser(@Valid @RequestBody LoginRequest request)` -> 200 OK
+  - `@PostMapping("/refresh")`: `refreshToken(@Valid @RequestBody RefreshTokenRequest request)` -> 200 OK
+  - `@PostMapping("/logout")`: `logoutUser(Authentication authentication)` -> 200 OK
+  - `@GetMapping("/me")`: `getCurrentUser(Authentication authentication)` -> 200 OK
+
+---
+
+## Verification Plan
+
+### Automated Tests & Compilation Verification
+1. **Maven Build & Compilation Check:**
+   - Execute Maven compilation in `Backend/AUTH-SERVICE` to verify syntax and dependency resolution:
+     ```powershell
+     mvn clean compile -f d:\projects\G-Drive-Clone\Backend\AUTH-SERVICE\pom.xml
+     ```
+
+### Manual Verification
+1. **Endpoint Testing (via cURL or REST Client):**
+   - **Register User:** `POST /api/auth/register` with test payload -> Verify 201 Created and JSON envelope.
+   - **Login User:** `POST /api/auth/login` with registered credentials -> Verify 200 OK, JWT access token, and refresh token.
+   - **Get Profile:** `GET /api/auth/me` with `Authorization: Bearer <accessToken>` -> Verify 200 OK and user profile data.
+   - **Refresh Token:** `POST /api/auth/refresh` with `refreshToken` -> Verify new JWT access token generated.
+   - **Logout:** `POST /api/auth/logout` with Bearer token -> Verify refresh token revoked from DB.

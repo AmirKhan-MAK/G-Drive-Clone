@@ -1,0 +1,30 @@
+server:
+    port: 8081
+
+spring:
+    application:
+        name: AUTH-SERVICE # MUST match Gateway route uri: lb://AUTH-SERVICE
+
+    datasource:
+        url: jdbc:mysql://localhost:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+        username: root
+        password: root
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+
+# Custom JWT Configuration
+jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration-ms: 86400000 # 24 Hours in milliseconds
+    refresh-expiration-ms: 604800000 # 7 Days in milliseconds
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+    instance:
+        prefer-ip-address: true

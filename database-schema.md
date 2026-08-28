@@ -32,8 +32,6 @@ Each microservice exclusively owns its database. Microservices MUST NOT query or
 ### 2.1 Entity Relationship Diagram
 ```mermaid
 erDiagram
-    USERS ||--o{ USER_ROLES : has
-    ROLES ||--o{ USER_ROLES : assigned
     USERS ||--o{ REFRESH_TOKENS : owns
 
     USERS {
@@ -41,18 +39,9 @@ erDiagram
         string name
         string email UK
         string password
+        string role
         datetime created_at
         datetime updated_at
-    }
-
-    ROLES {
-        bigint id PK
-        string name UK
-    }
-
-    USER_ROLES {
-        bigint user_id PK, FK
-        bigint role_id PK, FK
     }
 
     REFRESH_TOKENS {
@@ -74,22 +63,10 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'ROLE_USER',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_users_email (email)
-) ENGINE=InnoDB;
-
-CREATE TABLE roles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
-CREATE TABLE user_roles (
-    user_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
-    PRIMARY KEY (user_id, role_id),
-    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE refresh_tokens (
@@ -102,10 +79,8 @@ CREATE TABLE refresh_tokens (
     INDEX idx_refresh_token (token),
     INDEX idx_refresh_user (user_id)
 ) ENGINE=InnoDB;
-
--- Initial Seed Data
-INSERT INTO roles (name) VALUES ('ROLE_USER'), ('ROLE_ADMIN');
 ```
+
 
 ---
 

@@ -1,0 +1,30 @@
+# Auth Service Implementation Walkthrough (Enum Role Approach)
+
+We have updated and finalized the **Auth Service** microservice (`AUTH-SERVICE`) in `Backend/AUTH-SERVICE` using a simple, clean **`Role` Enum** approach (`ROLE_USER`, `ROLE_ADMIN`).
+
+---
+
+## 1. Summary of Updated Changes
+
+### Role Architecture Modification
+- **`Role.java`**: Converted to a simple Java Enum (`ROLE_USER`, `ROLE_ADMIN`).
+- **`User.java`**: Replaced complex `@ManyToMany` join table with `@Enumerated(EnumType.STRING) private Role role = Role.ROLE_USER;`.
+- **`RoleRepository.java`**: Removed as roles are managed directly as Enum constants in memory and persisted in the `role` column of the `users` table.
+- **`database-schema.md`**: Updated DDL and ERD to reflect `role VARCHAR(50) NOT NULL DEFAULT 'ROLE_USER'` directly in the `users` table.
+
+### Security & Business Logic
+- **`UserDetailsServiceImpl.java`**: Creates authority directly from Enum: `new SimpleGrantedAuthority(user.getRole().name())`.
+- **`AuthServiceImpl.java`**: Assigns `Role.ROLE_USER` on user registration, eliminating SQL role lookups.
+- **`SecurityConfig.java`**: Enforces stateless JWT authentication for protected routes (`/api/auth/logout`, `/api/auth/me`).
+
+---
+
+## 2. API Contract Verification
+
+| Endpoint | Method | Security | Status | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/auth/register` | `POST` | Public | **201 Created** | Registers new user with default role `ROLE_USER` |
+| `/api/auth/login` | `POST` | Public | **200 OK** | Authenticates credentials, returns access token & refresh token |
+| `/api/auth/refresh` | `POST` | Public | **200 OK** | Refreshes access token via refresh token |
+| `/api/auth/logout` | `POST` | Protected | **200 OK** | Revokes refresh token in database |
+| `/api/auth/me` | `GET` | Protected | **200 OK** | Retrieves current user profile |
