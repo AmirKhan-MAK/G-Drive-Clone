@@ -48,6 +48,15 @@ public class JwtService {
         return createToken(claims, userDetails.getUsername());
     }
 
+    public String generateToken(UserDetails userDetails, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("roles", userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        return createToken(claims, userDetails.getUsername());
+    }
+
     public String generateToken(String username, Map<String, Object> claims) {
         return createToken(claims, username);
     }

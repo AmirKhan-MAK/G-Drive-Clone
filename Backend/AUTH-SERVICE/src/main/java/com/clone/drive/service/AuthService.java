@@ -4,13 +4,12 @@ import com.clone.drive.dto.request.LoginRequest;
 import com.clone.drive.dto.request.RefreshTokenRequest;
 import com.clone.drive.dto.request.RegisterRequest;
 import com.clone.drive.dto.response.JwtResponse;
+import com.clone.drive.dto.response.RegisterResponse;
 import com.clone.drive.dto.response.UserProfileResponse;
-
-import java.util.Map;
 
 public interface AuthService {
 
-    Map<String, Object> registerUser(RegisterRequest request);
+    RegisterResponse registerUser(RegisterRequest request);
 
     JwtResponse loginUser(LoginRequest request);
 

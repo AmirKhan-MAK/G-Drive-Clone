@@ -4,15 +4,16 @@ import com.clone.drive.dto.request.LoginRequest;
 import com.clone.drive.dto.request.RefreshTokenRequest;
 import com.clone.drive.dto.request.RegisterRequest;
 import com.clone.drive.dto.response.JwtResponse;
+import com.clone.drive.dto.response.RegisterResponse;
 import com.clone.drive.dto.response.UserDto;
 import com.clone.drive.dto.response.UserProfileResponse;
 import com.clone.drive.entity.RefreshToken;
-import com.clone.drive.entity.Role;
 import com.clone.drive.entity.User;
 import com.clone.drive.exception.BadRequestException;
 import com.clone.drive.exception.ResourceNotFoundException;
 import com.clone.drive.exception.TokenRefreshException;
 import com.clone.drive.exception.UserAlreadyExistsException;
+import com.clone.drive.mapper.UserMapper;
 import com.clone.drive.repository.RefreshTokenRepository;
 import com.clone.drive.repository.UserRepository;
 import com.clone.drive.security.UserDetailsServiceImpl;
@@ -27,10 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -42,27 +39,29 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final UserMapper userMapper;
 
     @Value("${jwt.refresh-expiration-ms:604800000}")
     private long refreshExpirationMs;
 
-    public AuthServiceImpl(UserRepository userRepository,
-                           RefreshTokenRepository refreshTokenRepository,
-                           PasswordEncoder passwordEncoder,
-                           AuthenticationManager authenticationManager,
-                           JwtService jwtService,
-                           UserDetailsServiceImpl userDetailsService) {
-        this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-    }
+   
 
-    @Override
+    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+			PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService,
+			UserDetailsServiceImpl userDetailsService, UserMapper userMapper) {
+		this.userRepository = userRepository;
+		this.refreshTokenRepository = refreshTokenRepository;
+		this.passwordEncoder = passwordEncoder;
+		this.authenticationManager = authenticationManager;
+		this.jwtService = jwtService;
+		this.userDetailsService = userDetailsService;
+		this.userMapper = userMapper;
+	}
+
+    
+	@Override
     @Transactional
-    public Map<String, Object> registerUser(RegisterRequest request) {
+    public RegisterResponse registerUser(RegisterRequest request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException("Password and confirm password do not match");
         }
@@ -71,22 +70,11 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistsException("User already exists with email: " + request.getEmail());
         }
 
-        User user = new User(
-                request.getName(),
-                request.getEmail(),
-                passwordEncoder.encode(request.getPassword()),
-                Role.ROLE_USER
-        );
-
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        User user = userMapper.toEntity(request, encodedPassword);
         User savedUser = userRepository.save(user);
 
-        Map<String, Object> responseData = new HashMap<>();
-        responseData.put("userId", savedUser.getId());
-        responseData.put("name", savedUser.getName());
-        responseData.put("email", savedUser.getEmail());
-        responseData.put("createdAt", savedUser.getCreatedAt());
-
-        return responseData;
+        return userMapper.toRegisterResponse(savedUser);
     }
 
     @Override
@@ -100,10 +88,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
 
-        String accessToken = jwtService.generateToken(userDetails);
+        String accessToken = jwtService.generateToken(userDetails, user.getId());
         RefreshToken refreshToken = createOrUpdateRefreshToken(user);
 
-        UserDto userDto = new UserDto(user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+        UserDto userDto = userMapper.toUserDto(user);
 
         return new JwtResponse(
                 accessToken,
@@ -128,7 +116,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = refreshToken.getUser();
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
-        String newAccessToken = jwtService.generateToken(userDetails);
+        String newAccessToken = jwtService.generateToken(userDetails, user.getId());
 
         return new JwtResponse(
                 newAccessToken,
@@ -149,15 +137,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        List<String> roles = Collections.singletonList(user.getRole().name());
-
-        return new UserProfileResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                roles,
-                user.getCreatedAt()
-        );
+        return userMapper.toUserProfileResponse(user);
     }
 
     private RefreshToken createOrUpdateRefreshToken(User user) {

@@ -16,6 +16,17 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+storage:
+  upload-dir: D:/GoogleDriveClone/storage
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
 eureka:
   client:
     service-url:

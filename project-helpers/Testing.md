@@ -226,3 +226,233 @@ To cleanly terminate services after testing:
    ```powershell
    Get-NetTCPConnection -LocalPort 8081, 8761 -ErrorAction SilentlyContinue
    ```
+
+---
+
+# File Service Upload API Complete Testing Guide
+
+**Date & Time:** 2026-08-30 08:00:00 IST  
+**Type of Work:** End-to-End Manual & API Testing Procedure for File Upload API in File Service (`FILE-SERVICE`)
+
+---
+
+## 6. Environment & Prerequisites Checklist for File Upload
+
+Before running tests, ensure the following components are available on your system:
+- **Java JDK:** Version 21 installed and configured on `PATH`.
+- **MySQL Database Server:** Running locally on port `3306`.
+- **Database:** MySQL `file_db` database created (Spring Boot auto-creates tables via JPA `ddl-auto: update`):
+  ```sql
+  CREATE DATABASE IF NOT EXISTS file_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  ```
+- **Local Storage Directory:** Folder `D:\GoogleDriveClone\storage` (auto-created per user directory e.g., `D:\GoogleDriveClone\storage\{userId}\`).
+
+---
+
+## 7. Step 1: Start Microservices (Run Sequence)
+
+### A. Start Service Registry (Eureka Server)
+Navigate to `Service-Registry` and start Eureka (Port `8761`):
+```powershell
+cd d:\projects\G-Drive-Clone\Backend\Service-Registry
+mvn spring-boot:run
+```
+*Verify Eureka dashboard is live at:* `http://localhost:8761`
+
+### B. Start Auth Service
+Open a new terminal, navigate to `AUTH-SERVICE`, and start Auth Service (Port `8081`):
+```powershell
+cd d:\projects\G-Drive-Clone\Backend\AUTH-SERVICE
+mvn spring-boot:run
+```
+*Verify registration in Eureka as:* `AUTH-SERVICE`
+
+### C. Start File Service
+Open a new terminal, navigate to `FILE-SERVICE`, and start File Service (Port `8082`):
+```powershell
+cd d:\projects\G-Drive-Clone\Backend\FILE-SERVICE
+mvn spring-boot:run
+```
+*Verify output log:* Look for `Started FileServiceApplication in ... seconds` and registration in Eureka as `FILE-SERVICE`.
+
+---
+
+## 8. Step 2: File Upload API Testing Sequence
+
+First, execute user login via `AUTH-SERVICE` (`POST http://localhost:8081/api/auth/login`) to obtain a fresh JWT `accessToken`.
+
+### Test 8.1: Single File Upload with Authentication
+- **Endpoint:** `POST http://localhost:8082/api/files/upload`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Content-Type:** `multipart/form-data`
+- **Form Data:** `files=@"C:\path\to\sample.pdf"`
+
+**cURL Command:**
+```bash
+curl -X POST http://localhost:8082/api/files/upload \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN_HERE>" \
+  -F "files=@C:/path/to/sample.pdf"
+```
+
+**Expected Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Files uploaded successfully",
+  "data": [
+    {
+      "id": 1,
+      "userId": 1,
+      "folderId": null,
+      "originalName": "sample.pdf",
+      "contentType": "application/pdf",
+      "fileType": "PDF",
+      "fileSize": 2048576,
+      "downloadCount": 0,
+      "isDeleted": false,
+      "deletedAt": null,
+      "isFavorite": false,
+      "isPinned": false,
+      "createdAt": "2026-08-30T08:00:00",
+      "updatedAt": "2026-08-30T08:00:00"
+    }
+  ]
+}
+```
+
+---
+
+### Test 8.2: Multiple Files Upload
+- **Endpoint:** `POST http://localhost:8082/api/files/upload`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Form Data:** `files=@"C:\path\to\doc.pdf"`, `files=@"C:\path\to\image.png"`
+
+**cURL Command:**
+```bash
+curl -X POST http://localhost:8082/api/files/upload \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN_HERE>" \
+  -F "files=@C:/path/to/doc.pdf" \
+  -F "files=@C:/path/to/image.png"
+```
+
+**Expected Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Files uploaded successfully",
+  "data": [
+    {
+      "id": 2,
+      "userId": 1,
+      "folderId": null,
+      "originalName": "doc.pdf",
+      "contentType": "application/pdf",
+      "fileType": "PDF",
+      "fileSize": 512000,
+      "downloadCount": 0,
+      "isDeleted": false,
+      "isFavorite": false,
+      "isPinned": false,
+      "createdAt": "2026-08-30T08:01:00",
+      "updatedAt": "2026-08-30T08:01:00"
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "folderId": null,
+      "originalName": "image.png",
+      "contentType": "image/png",
+      "fileType": "IMAGE",
+      "fileSize": 1024000,
+      "downloadCount": 0,
+      "isDeleted": false,
+      "isFavorite": false,
+      "isPinned": false,
+      "createdAt": "2026-08-30T08:01:00",
+      "updatedAt": "2026-08-30T08:01:00"
+    }
+  ]
+}
+```
+
+---
+
+### Test 8.3: File Upload into Specific Folder
+- **Endpoint:** `POST http://localhost:8082/api/files/upload`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Form Data:** `files=@"C:\path\to\notes.txt"`, `folderId=10`
+
+**cURL Command:**
+```bash
+curl -X POST http://localhost:8082/api/files/upload \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN_HERE>" \
+  -F "files=@C:/path/to/notes.txt" \
+  -F "folderId=10"
+```
+
+**Expected Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Files uploaded successfully",
+  "data": [
+    {
+      "id": 4,
+      "userId": 1,
+      "folderId": 10,
+      "originalName": "notes.txt",
+      "contentType": "text/plain",
+      "fileType": "TEXT",
+      "fileSize": 1280,
+      "downloadCount": 0,
+      "isDeleted": false,
+      "isFavorite": false,
+      "isPinned": false,
+      "createdAt": "2026-08-30T08:02:00",
+      "updatedAt": "2026-08-30T08:02:00"
+    }
+  ]
+}
+```
+
+---
+
+### Test 8.4: Local Storage Disk & Database Verification
+
+1. **Local Disk Storage Verification:**
+   - Open File Explorer and check directory: `D:\GoogleDriveClone\storage\1\`
+   - Verify that physical files named like `{UUID}_sample.pdf` exist in this directory.
+
+2. **MySQL Database Verification:**
+   - Execute query on `file_db`:
+     ```sql
+     USE file_db;
+     SELECT id, user_id, folder_id, original_name, storage_name, storage_path, file_type, file_size, created_at FROM files;
+     ```
+
+---
+
+### Test 8.5: Negative & Security Validation Scenarios
+
+1. **Unauthorized Upload (Missing Token):**
+   - Execute upload request without `Authorization` header.
+   - **Expected Status:** `401 Unauthorized`
+
+2. **Empty File Upload Attempt:**
+   - Attempt to upload a 0-byte file.
+   - **Expected Status:** `400 Bad Request`
+   - **Body:** `{ "success": false, "message": "Failed to store empty file.", "data": null }`
+
+---
+
+## 9. Step 3: Stop Microservices
+
+To cleanly terminate services after testing:
+1. **Stop FILE-SERVICE:** Press `Ctrl + C` in the terminal running `FILE-SERVICE`.
+2. **Stop AUTH-SERVICE:** Press `Ctrl + C` in the terminal running `AUTH-SERVICE`.
+3. **Stop Service Registry:** Press `Ctrl + C` in the terminal running `Service-Registry`.
+4. Verify ports `8082`, `8081`, and `8761` are released using PowerShell:
+   ```powershell
+   Get-NetTCPConnection -LocalPort 8082, 8081, 8761 -ErrorAction SilentlyContinue
+   ```
+

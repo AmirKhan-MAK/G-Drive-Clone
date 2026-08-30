@@ -5,6 +5,7 @@ import com.clone.drive.dto.request.RefreshTokenRequest;
 import com.clone.drive.dto.request.RegisterRequest;
 import com.clone.drive.dto.response.ApiResponse;
 import com.clone.drive.dto.response.JwtResponse;
+import com.clone.drive.dto.response.RegisterResponse;
 import com.clone.drive.dto.response.UserProfileResponse;
 import com.clone.drive.service.AuthService;
 import jakarta.validation.Valid;
@@ -17,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -30,8 +29,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> registerUser(@Valid @RequestBody RegisterRequest request) {
-        Map<String, Object> data = authService.registerUser(request);
+    public ResponseEntity<ApiResponse<RegisterResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse data = authService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User registered successfully", data));
     }

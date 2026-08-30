@@ -114,6 +114,9 @@ backend/auth-service/src/main/java/com/drive/auth/
 │   │   └── AuthServiceImpl.java         # Auth service implementation
 │   └── JwtService.java                  # Token generation, parsing, validation logic
 │
+├── mapper/
+│   └── UserMapper.java                  # DTO <-> Entity mapping component
+│
 ├── repository/
 │   ├── UserRepository.java              # JPA Repo for `users` table
 │   └── RefreshTokenRepository.java      # JPA Repo for `refresh_tokens` table
@@ -129,6 +132,7 @@ backend/auth-service/src/main/java/com/drive/auth/
 │   │   ├── LoginRequest.java            # Login payload
 │   │   └── RefreshTokenRequest.java     # Token refresh payload
 │   └── response/
+│       ├── RegisterResponse.java        # User registration response payload DTO
 │       ├── JwtResponse.java             # Token response payload
 │       └── UserProfileResponse.java     # User profile metadata payload
 │
