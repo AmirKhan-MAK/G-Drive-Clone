@@ -1,47 +1,24 @@
 package com.clone.drive.dto.response;
 
-import com.clone.drive.entity.FileEntity;
-import com.clone.drive.entity.FileType;
-
 import java.time.LocalDateTime;
 
-public class FileResponse {
+public class FileDto {
 
     private Long id;
     private Long userId;
     private Long folderId;
     private String originalName;
     private String contentType;
-    private FileType fileType;
+    private String fileType;
     private Long fileSize;
     private Long downloadCount;
     private Boolean isDeleted;
-    private LocalDateTime deletedAt;
     private Boolean isFavorite;
     private Boolean isPinned;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public FileResponse() {
-    }
-
-    public static FileResponse fromEntity(FileEntity file) {
-        FileResponse response = new FileResponse();
-        response.setId(file.getId());
-        response.setUserId(file.getUserId());
-        response.setFolderId(file.getFolderId());
-        response.setOriginalName(file.getOriginalName());
-        response.setContentType(file.getContentType());
-        response.setFileType(file.getFileType());
-        response.setFileSize(file.getFileSize());
-        response.setDownloadCount(file.getDownloadCount());
-        response.setIsDeleted(file.getIsDeleted());
-        response.setDeletedAt(file.getDeletedAt());
-        response.setIsFavorite(file.getIsFavorite());
-        response.setIsPinned(file.getIsPinned());
-        response.setCreatedAt(file.getCreatedAt());
-        response.setUpdatedAt(file.getUpdatedAt());
-        return response;
+    public FileDto() {
     }
 
     public Long getId() {
@@ -84,11 +61,11 @@ public class FileResponse {
         this.contentType = contentType;
     }
 
-    public FileType getFileType() {
+    public String getFileType() {
         return fileType;
     }
 
-    public void setFileType(FileType fileType) {
+    public void setFileType(String fileType) {
         this.fileType = fileType;
     }
 
@@ -114,14 +91,6 @@ public class FileResponse {
 
     public void setIsDeleted(Boolean deleted) {
         isDeleted = deleted;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
     }
 
     public Boolean getIsFavorite() {

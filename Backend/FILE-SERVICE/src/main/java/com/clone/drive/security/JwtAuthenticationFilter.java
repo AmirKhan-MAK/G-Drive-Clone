@@ -21,52 +21,46 @@ import java.util.stream.Collectors;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+	private final JwtService jwtService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
+	public JwtAuthenticationFilter(JwtService jwtService) {
+		this.jwtService = jwtService;
+	}
 
-    @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+	@Override
+	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+			@NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+		final String authHeader = request.getHeader("Authorization");
 
-        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+		if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 
-        final String jwt = authHeader.substring(7);
+		final String jwt = authHeader.substring(7);
 
-        try {
-            if (jwtService.isTokenValid(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String email = jwtService.extractEmail(jwt);
-                Long userId = jwtService.extractUserId(jwt);
-                List<String> roles = jwtService.extractRoles(jwt);
+		try {
+			if (jwtService.isTokenValid(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+				String email = jwtService.extractEmail(jwt);
+				Long userId = jwtService.extractUserId(jwt);
+				List<String> roles = jwtService.extractRoles(jwt);
 
-                List<SimpleGrantedAuthority> authorities = (roles != null && !roles.isEmpty())
-                        ? roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
-                        : Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+				List<SimpleGrantedAuthority> authorities = (roles != null && !roles.isEmpty())
+						? roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
+						: Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
-                UserPrincipal principal = new UserPrincipal(userId, email, authorities);
+				UserPrincipal principal = new UserPrincipal(userId, email, authorities);
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-        } catch (Exception e) {
-            logger.error("Cannot set user authentication in File Service: {}", e);
-        }
+				UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null,
+						principal.getAuthorities());
+				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+				SecurityContextHolder.getContext().setAuthentication(authToken);
+			}
+		} catch (Exception e) {
+			logger.error("Cannot set user authentication in File Service: {}", e);
+		}
 
-        filterChain.doFilter(request, response);
-    }
+		filterChain.doFilter(request, response);
+	}
 }

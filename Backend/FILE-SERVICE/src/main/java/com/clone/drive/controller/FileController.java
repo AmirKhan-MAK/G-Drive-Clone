@@ -27,9 +27,10 @@ public class FileController {
     public ResponseEntity<ApiResponse<List<FileResponse>>> uploadFiles(
             @RequestParam("files") MultipartFile[] files,
             @RequestParam(value = "folderId", required = false) Long folderId,
-            @AuthenticationPrincipal UserPrincipal currentUser
-    ) {
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
         List<FileResponse> uploadedFiles = fileService.uploadFiles(files, folderId, currentUser);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Files uploaded successfully", uploadedFiles));
     }
