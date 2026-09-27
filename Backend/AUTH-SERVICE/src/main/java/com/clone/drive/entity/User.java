@@ -21,8 +21,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String name;
+    @Column(name = "full_name", nullable = false, length = 100)
+    private String fullName;
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
@@ -43,23 +43,23 @@ public class User {
     public User() {
     }
 
-    public User(String name, String email, String password) {
-        this.name = name;
+    public User(String fullName, String email, String password) {
+        this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.role = Role.ROLE_USER;
     }
 
-    public User(String name, String email, String password, Role role) {
-        this.name = name;
+    public User(String fullName, String email, String password, Role role) {
+        this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.role = role != null ? role : Role.ROLE_USER;
     }
 
-    public User(Long id, String name, String email, String password, Role role) {
+    public User(Long id, String fullName, String email, String password, Role role) {
         this.id = id;
-        this.name = name;
+        this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.role = role != null ? role : Role.ROLE_USER;
@@ -85,11 +85,11 @@ public class User {
     }
 
     public String getName() {
-        return name;
+        return fullName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setName(String fullName) {
+        this.fullName = fullName;
     }
 
     public String getEmail() {

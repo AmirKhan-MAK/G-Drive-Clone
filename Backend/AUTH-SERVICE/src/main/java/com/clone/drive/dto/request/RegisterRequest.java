@@ -8,7 +8,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Name is required")
     @Size(max = 100, message = "Name cannot exceed 100 characters")
-    private String name;
+    private String fullName;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
@@ -25,19 +25,19 @@ public class RegisterRequest {
     public RegisterRequest() {
     }
 
-    public RegisterRequest(String name, String email, String password, String confirmPassword) {
-        this.name = name;
+    public RegisterRequest(String fullName, String email, String password, String confirmPassword) {
+        this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.confirmPassword = confirmPassword;
     }
 
     public String getName() {
-        return name;
+        return fullName;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.fullName = fullName;
     }
 
     public String getEmail() {
