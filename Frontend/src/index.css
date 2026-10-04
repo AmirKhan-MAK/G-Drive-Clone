@@ -1,1 +1,103 @@
 @import "tailwindcss";
+
+:root {
+  /* Brand - Light Mode */
+  --gd-blue-50:  #eff6ff;
+  --gd-blue-100: #dbeafe;
+  --gd-blue-200: #bfdbfe;
+  --gd-blue-300: #93c5fd;
+  --gd-blue-400: #60a5fa;
+  --gd-blue-500: #3b82f6;
+  --gd-blue-600: #2563eb;
+  --gd-blue-700: #1d4ed8;
+
+  /* Neutrals - Light Mode */
+  --gd-gray-50:  #f8fafc;
+  --gd-gray-100: #f1f5f9;
+  --gd-gray-200: #e2e8f0;
+  --gd-gray-300: #cbd5e1;
+  --gd-gray-400: #94a3b8;
+  --gd-gray-500: #64748b;
+  --gd-gray-600: #475569;
+  --gd-gray-700: #334155;
+  --gd-gray-800: #1e293b;
+  --gd-gray-900: #0f172a;
+
+  /* Typography */
+  --gd-font: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Sizing */
+  --gd-radius-sm: 12px;
+  --gd-radius-md: 16px;
+  --gd-radius-lg: 24px;
+  --gd-radius-xl: 32px;
+  --gd-radius-full: 9999px;
+
+  /* Shadows - Light Mode */
+  --gd-shadow-sm:  0 2px 10px rgba(0,0,0,0.03);
+  --gd-shadow-md:  0 4px 15px rgba(0, 0, 0, 0.05);
+  --gd-shadow-lg:  0 10px 30px rgba(0, 0, 0, 0.08);
+  --gd-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  
+  /* Glassmorphism - Light Mode */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --dash-bg-grad-1: rgba(59, 130, 246, 0.15);
+  --dash-bg-grad-2: rgba(99, 102, 241, 0.15);
+  
+  --hero-grad-start: rgba(59, 130, 246, 0.1);
+  --hero-grad-end: rgba(139, 92, 246, 0.1);
+  --hero-border: rgba(59, 130, 246, 0.2);
+  --hero-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+
+  --ai-grad-start: rgba(139, 92, 246, 0.1);
+  --ai-grad-end: rgba(59, 130, 246, 0.1);
+  --ai-border: rgba(139, 92, 246, 0.2);
+  --ai-shadow: 0 0 20px rgba(99, 102, 241, 0.05);
+}
+
+[data-theme="dark"] {
+  /* Brand - Neon Purple/Indigo */
+  --gd-blue-50:  #171923;
+  --gd-blue-100: #202438;
+  --gd-blue-200: #2a314d;
+  --gd-blue-300: #3b4674;
+  --gd-blue-400: #4f65d6;
+  --gd-blue-500: #6366f1;
+  --gd-blue-600: #8b5cf6;
+  --gd-blue-700: #a855f7;
+
+  /* Neutrals - Dark Mode */
+  --gd-gray-50:  #09090b;
+  --gd-gray-100: #121216;
+  --gd-gray-200: #27272a;
+  --gd-gray-300: #3f3f46;
+  --gd-gray-400: #71717a;
+  --gd-gray-500: #a1a1aa;
+  --gd-gray-600: #d4d4d8;
+  --gd-gray-700: #e4e4e7;
+  --gd-gray-800: #f4f4f5;
+  --gd-gray-900: #ffffff;
+
+  /* Shadows - Neon Glows */
+  --gd-shadow-sm:  0 0 10px rgba(139, 92, 246, 0.1);
+  --gd-shadow-md:  0 4px 20px rgba(0, 0, 0, 0.4);
+  --gd-shadow-lg:  0 10px 40px rgba(0, 0, 0, 0.5);
+  --gd-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  
+  /* Glassmorphism - Dark Mode */
+  --glass-bg: rgba(18, 18, 22, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --dash-bg-grad-1: rgba(99, 102, 241, 0.15);
+  --dash-bg-grad-2: rgba(139, 92, 246, 0.15);
+  
+  --hero-grad-start: rgba(99, 102, 241, 0.2);
+  --hero-grad-end: rgba(139, 92, 246, 0.2);
+  --hero-border: rgba(139, 92, 246, 0.3);
+  --hero-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+
+  --ai-grad-start: rgba(139, 92, 246, 0.2);
+  --ai-grad-end: rgba(99, 102, 241, 0.2);
+  --ai-border: rgba(139, 92, 246, 0.3);
+  --ai-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+}

@@ -4,12 +4,15 @@ import com.clone.drive.exception.BadRequestException;
 import com.clone.drive.exception.StorageException;
 import com.clone.drive.service.StorageService;
 import com.clone.drive.storage.StorageProperties;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,6 +70,21 @@ public class LocalStorageServiceImpl implements StorageService {
             return new StorageDetail(storageName, destinationFile.toString());
         } catch (IOException e) {
             throw new StorageException("Failed to store file " + originalFilename, e);
+        }
+    }
+
+    @Override
+    public Resource loadFileAsResource(String storageName, Long userId) {
+        try {
+            Path file = this.rootLocation.resolve(String.valueOf(userId)).resolve(storageName).normalize();
+            Resource resource = new UrlResource(file.toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return resource;
+            } else {
+                throw new StorageException("Could not read file: " + storageName);
+            }
+        } catch (MalformedURLException e) {
+            throw new StorageException("Could not read file: " + storageName, e);
         }
     }
 }

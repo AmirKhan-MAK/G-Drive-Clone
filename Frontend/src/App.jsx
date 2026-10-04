@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 
 // Security Guard Wrapper: Yeh check karta hai ki kya user ke browser me token hai?
 // Agar nahi hai, toh zabardasti usko Login page par bhej dega.
@@ -17,14 +17,14 @@ export default function App() {
         {/* Public Routes - Koi bhi bina login ke dekh sakta hai */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
+        
         {/* Protected Route - Sirf logged in user dekh sakte hain */}
-        <Route path="/home" element={
+        <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Home />
+            <Dashboard />
           </ProtectedRoute>
         } />
-
+        
         {/* Default Route: Agar koi galat URL daale, toh login par redirect kardo */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

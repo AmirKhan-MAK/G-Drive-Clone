@@ -1,10 +1,13 @@
 package com.clone.drive.service;
 
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {
 
     StorageDetail storeFile(MultipartFile file, Long userId);
+
+    Resource loadFileAsResource(String storageName, Long userId);
 
     class StorageDetail {
         private final String storageName;

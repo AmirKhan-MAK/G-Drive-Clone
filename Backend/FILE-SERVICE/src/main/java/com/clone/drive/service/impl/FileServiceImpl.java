@@ -72,6 +72,36 @@ public class FileServiceImpl implements FileService {
 		return responses;
 	}
 
+	@Override
+	public List<FileResponse> getAllFiles(UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+
+		List<FileEntity> userFiles = fileRepository.findByUserIdAndIsDeletedFalse(currentUser.getUserId());
+		
+		List<FileResponse> responses = new ArrayList<>();
+		for (FileEntity file : userFiles) {
+			responses.add(FileResponse.fromEntity(file));
+		}
+		
+		return responses;
+	}
+
+	@Override
+	@Transactional
+	public FileEntity getFileForDownload(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+
+		FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found or access denied."));
+
+		file.setDownloadCount(file.getDownloadCount() + 1);
+		return fileRepository.save(file);
+	}
+
 	private FileType determineFileType(String contentType, String originalName) {
 		if (contentType != null) {
 			String lowerType = contentType.toLowerCase();

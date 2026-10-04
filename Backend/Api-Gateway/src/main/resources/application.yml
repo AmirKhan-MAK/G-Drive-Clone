@@ -28,22 +28,6 @@ spring:
               predicates:
                 - Path=/api/auth/**
 
-          # Global CORS Configuration for React Frontend
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowedOrigins:
-                  - "http://localhost:5173"
-                  - "http://localhost:3000"
-                allowedMethods:
-                  - GET
-                  - POST
-                  - PUT
-                  - PATCH
-                  - DELETE
-                  - OPTIONS
-                allowedHeaders: "*"
-                allowCredentials: true
 
 eureka:
   client:
