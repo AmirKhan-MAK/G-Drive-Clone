@@ -162,4 +162,96 @@ public class FileServiceImpl implements FileService {
 
 		return FileType.OTHER;
 	}
+
+	@Override
+	@Transactional
+	public FileResponse softDeleteFile(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found or already deleted."));
+		file.setIsDeleted(true);
+		file.setDeletedAt(java.time.LocalDateTime.now());
+		return FileResponse.fromEntity(fileRepository.save(file));
+	}
+
+	@Override
+	@Transactional
+	public FileResponse restoreFile(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		FileEntity file = fileRepository.findByIdAndUserId(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found."));
+		if (!Boolean.TRUE.equals(file.getIsDeleted())) {
+			throw new BadRequestException("File is not in recycle bin.");
+		}
+		file.setIsDeleted(false);
+		file.setDeletedAt(null);
+		return FileResponse.fromEntity(fileRepository.save(file));
+	}
+
+	@Override
+	@Transactional
+	public void permanentDeleteFile(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		FileEntity file = fileRepository.findByIdAndUserId(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found."));
+		
+		storageService.deleteFile(file.getStorageName(), currentUser.getUserId());
+		fileRepository.delete(file);
+	}
+
+	@Override
+	public List<FileResponse> getRecycleBinFiles(UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		List<FileEntity> files = fileRepository.findByUserIdAndIsDeletedTrue(currentUser.getUserId());
+		List<FileResponse> responses = new ArrayList<>();
+		for (FileEntity file : files) {
+			responses.add(FileResponse.fromEntity(file));
+		}
+		return responses;
+	}
+
+	@Override
+	public List<FileResponse> getFavoriteFiles(UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		List<FileEntity> files = fileRepository.findByUserIdAndIsFavoriteTrueAndIsDeletedFalse(currentUser.getUserId());
+		List<FileResponse> responses = new ArrayList<>();
+		for (FileEntity file : files) {
+			responses.add(FileResponse.fromEntity(file));
+		}
+		return responses;
+	}
+
+	@Override
+	@Transactional
+	public FileResponse toggleFavorite(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found."));
+		file.setIsFavorite(!Boolean.TRUE.equals(file.getIsFavorite()));
+		return FileResponse.fromEntity(fileRepository.save(file));
+	}
+
+	@Override
+	@Transactional
+	public FileResponse togglePin(Long fileId, UserPrincipal currentUser) {
+		if (currentUser == null || currentUser.getUserId() == null) {
+			throw new BadRequestException("User authentication details missing.");
+		}
+		FileEntity file = fileRepository.findByIdAndUserIdAndIsDeletedFalse(fileId, currentUser.getUserId())
+				.orElseThrow(() -> new BadRequestException("File not found."));
+		file.setIsPinned(!Boolean.TRUE.equals(file.getIsPinned()));
+		return FileResponse.fromEntity(fileRepository.save(file));
+	}
 }

@@ -14,4 +14,18 @@ public interface FileService {
     List<FileResponse> getAllFiles(UserPrincipal currentUser);
     
     FileEntity getFileForDownload(Long fileId, UserPrincipal currentUser);
+
+    FileResponse softDeleteFile(Long fileId, UserPrincipal currentUser);
+    
+    FileResponse restoreFile(Long fileId, UserPrincipal currentUser);
+    
+    void permanentDeleteFile(Long fileId, UserPrincipal currentUser);
+    
+    List<FileResponse> getRecycleBinFiles(UserPrincipal currentUser);
+    
+    List<FileResponse> getFavoriteFiles(UserPrincipal currentUser);
+    
+    FileResponse toggleFavorite(Long fileId, UserPrincipal currentUser);
+    
+    FileResponse togglePin(Long fileId, UserPrincipal currentUser);
 }

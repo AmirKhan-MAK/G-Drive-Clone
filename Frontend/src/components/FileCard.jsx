@@ -6,11 +6,10 @@ import {
   FileIcon, ImageIcon, VideoIcon, FileTextIcon, TableIcon, SlidesIcon, MoreVertIcon, StarIcon
 } from './DashboardIcons';
 
-export default function FileCard({ file, theme, onFileAction }) {
+export default function FileCard({ file, theme, onFileAction, isStarred, onToggleStar, onDeleteMock }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(file.originalName);
-  const [isStarred, setIsStarred] = useState(file.isFavorite || false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -100,12 +99,16 @@ export default function FileCard({ file, theme, onFileAction }) {
   const handleDelete = async (e) => {
     e.stopPropagation();
     setMenuOpen(false);
-    if (window.confirm("Are you sure you want to delete this file?")) {
-      try {
-        await api.delete(`/api/files/${file.id}`);
-        if (onFileAction) onFileAction();
-      } catch (err) {
-        alert("Failed to delete file");
+    if (window.confirm("Are you sure you want to move this file to trash?")) {
+      if (onDeleteMock) {
+        onDeleteMock();
+      } else {
+        try {
+          await api.delete(`/api/files/${file.id}`);
+          if (onFileAction) onFileAction();
+        } catch (err) {
+          alert("Failed to delete file");
+        }
       }
     }
   };
@@ -115,7 +118,7 @@ export default function FileCard({ file, theme, onFileAction }) {
       {/* Preview */}
       <div className="dash-file__preview" style={{ background: theme === 'dark' ? `${t.color}15` : t.bg, position: 'relative' }}>
         <button 
-          onClick={(e) => { e.stopPropagation(); setIsStarred(!isStarred); }}
+          onClick={(e) => { e.stopPropagation(); if(onToggleStar) onToggleStar(); }}
           style={{ position: 'absolute', top: '8px', right: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
           aria-label={isStarred ? "Remove from starred" : "Add to starred"}
           title="Star"

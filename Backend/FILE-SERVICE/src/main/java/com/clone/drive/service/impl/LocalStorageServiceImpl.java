@@ -87,4 +87,14 @@ public class LocalStorageServiceImpl implements StorageService {
             throw new StorageException("Could not read file: " + storageName, e);
         }
     }
+
+    @Override
+    public void deleteFile(String storageName, Long userId) {
+        try {
+            Path file = this.rootLocation.resolve(String.valueOf(userId)).resolve(storageName).normalize();
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            throw new StorageException("Failed to delete file: " + storageName, e);
+        }
+    }
 }

@@ -65,6 +65,8 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeFolderMenuId, setActiveFolderMenuId] = useState(null);
+  const [localStarredIds, setLocalStarredIds] = useState(new Set());
+  const [localTrashIds, setLocalTrashIds] = useState(new Set());
   const fileInputRef = useRef(null);
 
   const handleFileUpload = async (e) => {
@@ -207,9 +209,16 @@ export default function Dashboard() {
   const pct = Math.round((STORAGE.used / STORAGE.total) * 100);
 
   const displayFolders = currentFolder ? (folderContents.subfolders || []) : folders;
-  const displayFiles = currentFolder 
-    ? files.filter(file => file.folderId === currentFolder.id)
-    : files.filter(file => file.folderId == null);
+  let displayFiles = [];
+  if (activeNav === 'trash') {
+    displayFiles = files.filter(f => localTrashIds.has(f.id));
+  } else if (activeNav === 'starred') {
+    displayFiles = files.filter(f => localStarredIds.has(f.id) && !localTrashIds.has(f.id));
+  } else {
+    displayFiles = currentFolder 
+      ? files.filter(file => file.folderId === currentFolder.id && !localTrashIds.has(file.id))
+      : files.filter(file => file.folderId == null && !localTrashIds.has(file.id));
+  }
   
   const isFoldersLoading = currentFolder ? isLoadingContents : isLoadingFolders;
   const foldersError = currentFolder ? fetchContentsError : fetchFoldersError;
@@ -399,24 +408,28 @@ export default function Dashboard() {
           <main className="dash-main">
 
             {activeNav === 'starred' && (
-              <div style={{ padding: '20px' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: 'var(--text-primary)' }}>Starred Items</h2>
-                <div style={{ padding: '40px', textAlign: 'center', background: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                  <StarIcon width={48} height={48} stroke="var(--text-secondary)" style={{ marginBottom: '16px', opacity: 0.5 }} />
-                  <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>No starred files yet</h3>
-                  <p style={{ color: 'var(--text-secondary)' }}>Add stars to files and folders that you want to find easily later.</p>
-                </div>
+              <div style={{ padding: '20px 0' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px', color: 'var(--text-primary)' }}>Starred Items</h2>
+                {displayFiles.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', background: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                    <StarIcon width={48} height={48} stroke="var(--text-secondary)" style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>No starred files yet</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>Add stars to files that you want to find easily later.</p>
+                  </div>
+                )}
               </div>
             )}
 
             {activeNav === 'trash' && (
-              <div style={{ padding: '20px' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '16px', color: 'var(--text-primary)' }}>Trash</h2>
-                <div style={{ padding: '40px', textAlign: 'center', background: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                  <TrashIcon width={48} height={48} stroke="var(--text-secondary)" style={{ marginBottom: '16px', opacity: 0.5 }} />
-                  <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Trash is empty</h3>
-                  <p style={{ color: 'var(--text-secondary)' }}>Items in trash are deleted forever after 30 days.</p>
-                </div>
+              <div style={{ padding: '20px 0' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '24px', color: 'var(--text-primary)' }}>Trash</h2>
+                {displayFiles.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', background: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                    <TrashIcon width={48} height={48} stroke="var(--text-secondary)" style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Trash is empty</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>Items in trash are deleted forever after 30 days.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -553,40 +566,60 @@ export default function Dashboard() {
             </section>
 
             {/* ── Files ── */}
-            <section>
-              <div className="dash-section-header">
-                <h3>Files</h3>
-                <button>
-                  <PlusIcon width={14} height={14} />
-                </button>
-              </div>
-              <div className="dash-files">
-                {isFilesLoading ? (
-                  <p style={{ padding: '20px', color: '#6b7280' }}>Loading files...</p>
-                ) : filesError ? (
-                  <p style={{ padding: '20px', color: '#ef4444' }}>Error: {filesError}</p>
-                ) : displayFiles.length === 0 ? (
-                  <p style={{ padding: '20px', color: '#6b7280' }}>No files found. Upload some!</p>
-                ) : (
-                  displayFiles.map((file) => (
-                    <FileCard 
-                      key={file.id} 
-                      file={file} 
-                      theme={theme} 
-                      onFileAction={() => {
-                        // Re-fetch files when an action like rename or delete occurs
-                        api.get('/api/files/list').then(res => setFiles(res.data.data || []));
-                        if (currentFolder) {
-                          api.get(`/api/folders/${currentFolder.id}/contents`).then(res => 
-                            setFolderContents(res.data.data || { subfolders: [], files: [] })
-                          );
-                        }
-                      }} 
-                    />
-                  ))
-                )}
-              </div>
-            </section>
+            {(displayFiles.length > 0 || (activeNav !== 'starred' && activeNav !== 'trash')) && (
+              <section>
+                <div className="dash-section-header">
+                  <h3>Files</h3>
+                  {activeNav !== 'starred' && activeNav !== 'trash' && (
+                    <button>
+                      <PlusIcon width={14} height={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="dash-files">
+                  {isFilesLoading ? (
+                    <p style={{ padding: '20px', color: '#6b7280' }}>Loading files...</p>
+                  ) : filesError ? (
+                    <p style={{ padding: '20px', color: '#ef4444' }}>Error: {filesError}</p>
+                  ) : displayFiles.length === 0 ? (
+                    <p style={{ padding: '20px', color: '#6b7280' }}>No files found.</p>
+                  ) : (
+                    displayFiles.map((file) => (
+                      <FileCard 
+                        key={file.id} 
+                        file={file} 
+                        theme={theme} 
+                        isStarred={localStarredIds.has(file.id)}
+                        onToggleStar={() => {
+                          setLocalStarredIds(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(file.id)) newSet.delete(file.id);
+                            else newSet.add(file.id);
+                            return newSet;
+                          });
+                        }}
+                        onDeleteMock={() => {
+                          setLocalTrashIds(prev => {
+                            const newSet = new Set(prev);
+                            newSet.add(file.id);
+                            return newSet;
+                          });
+                        }}
+                        onFileAction={() => {
+                          // Re-fetch files when an action like rename occurs
+                          api.get('/api/files/list').then(res => setFiles(res.data.data || []));
+                          if (currentFolder) {
+                            api.get(`/api/folders/${currentFolder.id}/contents`).then(res => 
+                              setFolderContents(res.data.data || { subfolders: [], files: [] })
+                            );
+                          }
+                        }} 
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            )}
             </>
             )}
           </main>

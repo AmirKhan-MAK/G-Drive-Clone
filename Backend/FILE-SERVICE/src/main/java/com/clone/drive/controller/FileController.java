@@ -63,4 +63,65 @@ public class FileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getOriginalName() + "\"")
                 .body(resource);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<FileResponse>> softDeleteFile(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        FileResponse response = fileService.softDeleteFile(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("File moved to Recycle Bin", response));
+    }
+
+    @PutMapping("/restore/{id}")
+    public ResponseEntity<ApiResponse<FileResponse>> restoreFile(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        FileResponse response = fileService.restoreFile(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("File restored successfully", response));
+    }
+
+    @DeleteMapping("/permanent/{id}")
+    public ResponseEntity<ApiResponse<Void>> permanentDeleteFile(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        fileService.permanentDeleteFile(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("File and metadata permanently deleted", null));
+    }
+
+    @GetMapping("/recycle-bin")
+    public ResponseEntity<ApiResponse<List<FileResponse>>> getRecycleBinFiles(
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        List<FileResponse> files = fileService.getRecycleBinFiles(currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Recycle bin files retrieved", files));
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponse<List<FileResponse>>> getFavoriteFiles(
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        List<FileResponse> files = fileService.getFavoriteFiles(currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Favorite files retrieved", files));
+    }
+
+    @PutMapping("/favorite/{id}")
+    public ResponseEntity<ApiResponse<FileResponse>> toggleFavorite(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        FileResponse response = fileService.toggleFavorite(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Favorite status toggled", response));
+    }
+
+    @PutMapping("/pin/{id}")
+    public ResponseEntity<ApiResponse<FileResponse>> togglePin(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        FileResponse response = fileService.togglePin(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Pin status toggled", response));
+    }
 }

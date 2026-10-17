@@ -9,6 +9,8 @@ public interface StorageService {
 
     Resource loadFileAsResource(String storageName, Long userId);
 
+    void deleteFile(String storageName, Long userId);
+
     class StorageDetail {
         private final String storageName;
         private final String storagePath;
